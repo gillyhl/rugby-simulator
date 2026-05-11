@@ -1,8 +1,12 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs;
 use rand::Rng;
 use rand_distr::Poisson;
+
+#[cfg(not(target_arch = "wasm32"))]
+use walkdir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TeamStats {
@@ -43,6 +47,7 @@ impl RugbyPredictionModel {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn load_data(&mut self, data_dir: &str) -> Result<usize, Box<dyn std::error::Error>> {
         let mut game_count = 0;
         let mut all_games = Vec::new();
@@ -180,6 +185,7 @@ impl RugbyPredictionModel {
         Ok(GameData { home, away })
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn save_model(&self, filepath: &str) -> Result<(), Box<dyn std::error::Error>> {
         let json = serde_json::to_string_pretty(&self.models)?;
         fs::write(filepath, json)?;
@@ -187,10 +193,16 @@ impl RugbyPredictionModel {
         Ok(())
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn load_model(&mut self, filepath: &str) -> Result<(), Box<dyn std::error::Error>> {
         let content = fs::read_to_string(filepath)?;
         self.models = serde_json::from_str(&content)?;
         println!("Model loaded from {}", filepath);
+        Ok(())
+    }
+
+    pub fn load_from_json_str(&mut self, json: &str) -> Result<(), Box<dyn std::error::Error>> {
+        self.models = serde_json::from_str(json)?;
         Ok(())
     }
 }
@@ -200,3 +212,6 @@ impl Default for RugbyPredictionModel {
         Self::new()
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+mod wasm;
