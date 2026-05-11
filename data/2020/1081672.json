@@ -1,0 +1,16 @@
+{
+  "away": {
+    "tries": 1,
+    "conversions": 1,
+    "penalties": 7,
+    "dropGoals": 0,
+    "score": 28
+  },
+  "home": {
+    "tries": 2,
+    "conversions": 1,
+    "penalties": 2,
+    "dropGoals": 0,
+    "score": 18
+  }
+}
