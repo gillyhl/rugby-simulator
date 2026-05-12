@@ -7,50 +7,7 @@
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div id="app">
-    <header>
-      <h1>Rugby Match Predictor</h1>
-      <p class="subtitle">Powered by Poisson distribution statistical modelling</p>
-    </header>
-
-    <main>
-      <section class="team-inputs">
-        <div class="team-input-group">
-          <label for="home-team">Home Team</label>
-          <input id="home-team" type="text" placeholder="e.g. All Blacks" value="Home XV" />
-        </div>
-        <div class="vs-badge">VS</div>
-        <div class="team-input-group">
-          <label for="away-team">Away Team</label>
-          <input id="away-team" type="text" placeholder="e.g. Springboks" value="Away XV" />
-        </div>
-      </section>
-
-      <button id="predict-btn" disabled>Loading model...</button>
-
-      <section id="result" class="result hidden" aria-live="polite">
-        <div class="scoreboard">
-          <div class="team-score" id="home-score-block">
-            <span class="team-name" id="home-team-name"></span>
-            <span class="score" id="home-score"></span>
-          </div>
-          <div class="score-divider">–</div>
-          <div class="team-score" id="away-score-block">
-            <span class="score" id="away-score"></span>
-            <span class="team-name" id="away-team-name"></span>
-          </div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-col" id="home-stats"></div>
-          <div class="stat-col" id="away-stats"></div>
-        </div>
-
-        <p class="result-label" id="result-label"></p>
-      </section>
-    </main>
-  </div>
-
-  <script type="module" src="/src/main.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
