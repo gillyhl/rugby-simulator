@@ -3,11 +3,14 @@ import init, { WasmPredictor } from '../pkg/rugby_simulator.js';
 import TeamInput from './components/TeamInput';
 import Scoreboard from './components/Scoreboard';
 import StatsTable from './components/StatsTable';
+import SplashScreen from './components/SplashScreen';
+import SeasonMode from './components/SeasonMode';
 
 export default function App() {
   const [predictor, setPredictor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState('splash');
   const [homeTeam, setHomeTeam] = useState('Home XV');
   const [awayTeam, setAwayTeam] = useState('Away XV');
   const [result, setResult] = useState(null);
@@ -28,6 +31,15 @@ export default function App() {
     setupWasm();
   }, []);
 
+  const createNewPredictor = () => {
+    try {
+      return new WasmPredictor();
+    } catch (err) {
+      console.error('Failed to create new predictor:', err);
+      throw err;
+    }
+  };
+
   const handlePredict = () => {
     if (!predictor) return;
 
@@ -46,17 +58,45 @@ export default function App() {
     }
   };
 
+  if (mode === 'splash') {
+    return (
+      <SplashScreen
+        loading={loading}
+        onSingleMatch={() => setMode('single')}
+        onSeason={() => setMode('season')}
+      />
+    );
+  }
+
+  if (mode === 'season') {
+    return (
+      <SeasonMode
+        predictor={predictor}
+        createNewPredictor={createNewPredictor}
+        onBack={() => setMode('splash')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-amber-400 mb-2">
-            Rugby Match Predictor
-          </h1>
-          <p className="text-neutral-400">
-            Powered by Poisson distribution statistical modelling
-          </p>
+        <header className="flex items-center justify-between mb-12">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-amber-400 mb-2">
+              Rugby Match Predictor
+            </h1>
+            <p className="text-neutral-400">
+              Powered by Poisson distribution statistical modelling
+            </p>
+          </div>
+          <button
+            onClick={() => setMode('splash')}
+            className="py-2 px-4 rounded-lg border border-neutral-700 text-neutral-400 hover:text-white hover:border-amber-400 transition-colors"
+          >
+            ← Back
+          </button>
         </header>
 
         {/* Error message */}
