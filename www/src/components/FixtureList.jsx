@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { getTeamLogo, getTeamLogoStyle } from '../utils/teamsData';
+
 export default function FixtureList({
   fixtures,
   currentRound,
@@ -5,6 +8,19 @@ export default function FixtureList({
   onSimulateRound,
   simulating
 }) {
+  const [expandedFixtures, setExpandedFixtures] = useState(new Set());
+
+  const toggleExpanded = (fixtureId) => {
+    setExpandedFixtures(prev => {
+      const next = new Set(prev);
+      if (next.has(fixtureId)) {
+        next.delete(fixtureId);
+      } else {
+        next.add(fixtureId);
+      }
+      return next;
+    });
+  };
   const roundedFixtures = {};
   for (const fixture of fixtures) {
     if (!roundedFixtures[fixture.round]) {
@@ -53,43 +69,142 @@ export default function FixtureList({
             </div>
 
             <div className="space-y-2">
-              {roundFixtures.map(fixture => (
-                <div
-                  key={fixture.id}
-                  className="flex items-center justify-between bg-neutral-800/40 p-3 rounded"
-                >
-                  <div className="flex-1">
-                    <div className="text-sm font-bold text-white">
-                      {fixture.home}
-                    </div>
-                    <div className="text-sm font-bold text-white">
-                      {fixture.away}
-                    </div>
-                  </div>
-
-                  {fixture.result ? (
-                    <div className="ml-4 text-right">
-                      <div className="text-lg font-bold text-amber-400">
-                        {fixture.result.homeScore}
-                      </div>
-                      <div className="text-xs text-neutral-400 mb-1">–</div>
-                      <div className="text-lg font-bold text-amber-400">
-                        {fixture.result.awayScore}
-                      </div>
-                    </div>
-                  ) : isCurrent ? (
+              {roundFixtures.map(fixture => {
+                const isExpanded = expandedFixtures.has(fixture.id);
+                return (
+                  <div key={fixture.id}>
                     <button
-                      onClick={() => onSimulateMatch(fixture)}
-                      disabled={simulating}
-                      className="ml-4 py-1 px-2.5 bg-amber-400 text-neutral-950 font-bold rounded text-xs hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      onClick={() => fixture.result && toggleExpanded(fixture.id)}
+                      className={`w-full relative flex items-center justify-between bg-neutral-800/40 p-3 rounded ${
+                        fixture.result ? 'cursor-pointer hover:bg-neutral-800/60 transition-colors' : ''
+                      }`}
                     >
-                      {simulating ? 'Sim...' : 'Simulate'}
+                      <div className="absolute left-0 top-0 bottom-0 w-25 overflow-hidden">
+                        <img
+                          src={getTeamLogo(fixture.home)}
+                          alt={fixture.home}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 -rotate-12"
+                          style={{ width: '120px', maxWidth: 'none', objectFit: 'contain', top: '50%', left: '50%', ...getTeamLogoStyle(fixture.home) }}
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      </div>
+                      <div className="absolute right-0 top-0 bottom-0 w-25 overflow-hidden">
+                        <img
+                          src={getTeamLogo(fixture.away)}
+                          alt={fixture.away}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 rotate-12"
+                          style={{ width: '120px', maxWidth: 'none', objectFit: 'contain', top: '50%', left: '50%', ...getTeamLogoStyle(fixture.away) }}
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      </div>
+
+                      <div className="flex items-center flex-1 gap-3 relative z-10">
+                        {fixture.result && (
+                          <span className={`text-neutral-400 transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}>
+                            ▶
+                          </span>
+                        )}
+                        {!fixture.result && (
+                          <span className="w-4 shrink-0"></span>
+                        )}
+
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                          <div className="text-white font-bold text-right min-w-28">
+                            {fixture.home}
+                          </div>
+                        </div>
+
+                        {fixture.result ? (
+                          <div className="flex items-center gap-2 text-amber-400 font-bold w-20 justify-center shrink-0">
+                            <span>{fixture.result.homeScore}</span>
+                            <span className="text-neutral-400">v</span>
+                            <span>{fixture.result.awayScore}</span>
+                          </div>
+                        ) : isCurrent ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSimulateMatch(fixture);
+                            }}
+                            disabled={simulating}
+                            className="py-1 px-2.5 bg-amber-400 text-neutral-950 font-bold rounded text-xs hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0"
+                          >
+                            {simulating ? 'Sim...' : 'Simulate'}
+                          </button>
+                        ) : (
+                          <div className="text-neutral-500 w-20 text-center shrink-0">– v –</div>
+                        )}
+
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="text-white font-bold text-left min-w-28">
+                            {fixture.away}
+                          </div>
+                        </div>
+                      </div>
                     </button>
-                  ) : (
-                    <div className="ml-4 text-neutral-500 text-sm font-bold">–</div>
-                  )}
-                </div>
-              ))}
+
+                    {fixture.result && isExpanded && (
+                      <div className="bg-neutral-800/20 p-4 rounded-b border-t border-neutral-800">
+                        <div className="grid grid-cols-2 gap-6">
+                          {/* Home Team Stats */}
+                          <div>
+                            <h4 className="text-white font-bold mb-3 text-center">{fixture.home}</h4>
+                            <div className="space-y-2 text-sm text-neutral-300">
+                              <div className="flex justify-between">
+                                <span>Tries</span>
+                                <span className="text-white font-bold">{fixture.result.homeTries}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Conversions</span>
+                                <span className="text-white font-bold">{fixture.result.homeConversions}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Penalties</span>
+                                <span className="text-white font-bold">{fixture.result.homePenalties}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Drop Goals</span>
+                                <span className="text-white font-bold">{fixture.result.homeDropGoals}</span>
+                              </div>
+                              <div className="flex justify-between pt-2 border-t border-neutral-700">
+                                <span className="font-bold">League Points</span>
+                                <span className="text-amber-400 font-bold">{fixture.result.homePoints}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Away Team Stats */}
+                          <div>
+                            <h4 className="text-white font-bold mb-3 text-center">{fixture.away}</h4>
+                            <div className="space-y-2 text-sm text-neutral-300">
+                              <div className="flex justify-between">
+                                <span>Tries</span>
+                                <span className="text-white font-bold">{fixture.result.awayTries}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Conversions</span>
+                                <span className="text-white font-bold">{fixture.result.awayConversions}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Penalties</span>
+                                <span className="text-white font-bold">{fixture.result.awayPenalties}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Drop Goals</span>
+                                <span className="text-white font-bold">{fixture.result.awayDropGoals}</span>
+                              </div>
+                              <div className="flex justify-between pt-2 border-t border-neutral-700">
+                                <span className="font-bold">League Points</span>
+                                <span className="text-amber-400 font-bold">{fixture.result.awayPoints}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

@@ -1,3 +1,5 @@
+import { getTeamLogo } from '../utils/teamsData';
+
 export default function PlayoffBracket({
   playoffFixtures,
   onSimulateMatch,
@@ -27,8 +29,24 @@ export default function PlayoffBracket({
             {sf1.label}
           </h3>
           <div className="space-y-2">
-            <div className="text-white font-bold">{sf1.home}</div>
-            <div className="text-white font-bold">{sf1.away}</div>
+            <div className="flex items-center gap-2">
+              <img
+                src={getTeamLogo(sf1.home)}
+                alt={sf1.home}
+                className="h-6 w-6 object-contain"
+                onError={(e) => e.target.style.display = 'none'}
+              />
+              <div className="text-white font-bold">{sf1.home}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <img
+                src={getTeamLogo(sf1.away)}
+                alt={sf1.away}
+                className="h-6 w-6 object-contain"
+                onError={(e) => e.target.style.display = 'none'}
+              />
+              <div className="text-white font-bold">{sf1.away}</div>
+            </div>
           </div>
 
           {sf1.result ? (
@@ -60,8 +78,24 @@ export default function PlayoffBracket({
             {sf2.label}
           </h3>
           <div className="space-y-2">
-            <div className="text-white font-bold">{sf2.home}</div>
-            <div className="text-white font-bold">{sf2.away}</div>
+            <div className="flex items-center gap-2">
+              <img
+                src={getTeamLogo(sf2.home)}
+                alt={sf2.home}
+                className="h-6 w-6 object-contain"
+                onError={(e) => e.target.style.display = 'none'}
+              />
+              <div className="text-white font-bold">{sf2.home}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <img
+                src={getTeamLogo(sf2.away)}
+                alt={sf2.away}
+                className="h-6 w-6 object-contain"
+                onError={(e) => e.target.style.display = 'none'}
+              />
+              <div className="text-white font-bold">{sf2.away}</div>
+            </div>
           </div>
 
           {sf2.result ? (
@@ -100,8 +134,24 @@ export default function PlayoffBracket({
           {finalReady ? (
             <>
               <div className="space-y-2">
-                <div className="text-white font-bold">{final.home}</div>
-                <div className="text-white font-bold">{final.away}</div>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={getTeamLogo(final.home)}
+                    alt={final.home}
+                    className="h-6 w-6 object-contain"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                  <div className="text-white font-bold">{final.home}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img
+                    src={getTeamLogo(final.away)}
+                    alt={final.away}
+                    className="h-6 w-6 object-contain"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                  <div className="text-white font-bold">{final.away}</div>
+                </div>
               </div>
 
               {finalComplete ? (

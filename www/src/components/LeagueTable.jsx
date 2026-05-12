@@ -1,3 +1,5 @@
+import { getTeamLogo } from '../utils/teamsData';
+
 export default function LeagueTable({ rows, top4Teams }) {
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
@@ -32,7 +34,15 @@ export default function LeagueTable({ rows, top4Teams }) {
                       isPlayoffQualifier ? 'text-amber-400 font-bold' : 'text-white'
                     }`}
                   >
-                    {row.team}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={getTeamLogo(row.team)}
+                        alt={row.team}
+                        className="h-6 w-6 object-contain"
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                      <span>{row.team}</span>
+                    </div>
                   </td>
                   <td className="px-2 py-3 text-center text-neutral-400">{row.played}</td>
                   <td className="px-2 py-3 text-center text-neutral-400">{row.won}</td>
