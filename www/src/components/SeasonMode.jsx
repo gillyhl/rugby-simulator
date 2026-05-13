@@ -79,6 +79,29 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
     }
   };
 
+  const watchMatch = async (fixture) => {
+    if (!predictor) return null;
+
+    try {
+      console.log(`Watching match: ${fixture.home} vs ${fixture.away}`);
+      const freshPredictor = createNewPredictor();
+      const resultJson = freshPredictor.simulate_game(fixture.home, fixture.away);
+      console.log('Simulated game from WASM:', resultJson);
+      const result = JSON.parse(resultJson);
+      return result;
+    } catch (err) {
+      console.error('Timeline simulation failed:', err);
+      setError(`Timeline simulation failed: ${err.message}`);
+      return null;
+    }
+  };
+
+  const updateFixtureResult = (fixtureId, matchResult) => {
+    setFixtures(prev =>
+      prev.map(f => (f.id === fixtureId ? { ...f, result: matchResult } : f))
+    );
+  };
+
   const simulateRound = async (round) => {
     if (!predictor) return;
 
@@ -285,16 +308,20 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
         )}
 
         {phase === 'season' && (
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <LeagueTable rows={table} />
-            </div>
+          <div className="grid lg:grid-cols-5 gap-8">
             <div className="lg:col-span-2">
+              <div className="sticky top-0 h-fit">
+                <LeagueTable rows={table} />
+              </div>
+            </div>
+            <div className="lg:col-span-3">
               <FixtureList
                 fixtures={fixtures}
                 currentRound={currentRound}
                 onSimulateMatch={simulateMatch}
                 onSimulateRound={simulateRound}
+                onWatchMatch={watchMatch}
+                onFixtureUpdate={updateFixtureResult}
                 simulating={simulating}
               />
             </div>
@@ -303,11 +330,13 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
 
         {phase === 'playoffs' && (
           <div className="space-y-8">
-            <div className="grid lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <LeagueTable rows={table} />
-              </div>
+            <div className="grid lg:grid-cols-5 gap-8">
               <div className="lg:col-span-2">
+                <div className="sticky top-0 h-fit">
+                  <LeagueTable rows={table} />
+                </div>
+              </div>
+              <div className="lg:col-span-3">
                 <PlayoffBracket
                   playoffFixtures={playoffFixtures}
                   onSimulateMatch={simulatePlayoffMatch}
@@ -320,11 +349,13 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
 
         {phase === 'complete' && (
           <div className="space-y-8">
-            <div className="grid lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <LeagueTable rows={table} />
-              </div>
+            <div className="grid lg:grid-cols-5 gap-8">
               <div className="lg:col-span-2">
+                <div className="sticky top-0 h-fit">
+                  <LeagueTable rows={table} />
+                </div>
+              </div>
+              <div className="lg:col-span-3">
                 <div className="bg-neutral-900 border border-amber-400 rounded-lg p-8 text-center">
                   <h2 className="text-3xl font-bold text-amber-400 mb-4">
                     Season Complete!

@@ -24,6 +24,46 @@ pub struct GameData {
     pub home: TeamStats,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EventType {
+    #[serde(rename = "try")]
+    Try,
+    #[serde(rename = "conversion")]
+    Conversion,
+    #[serde(rename = "penalty")]
+    Penalty,
+    #[serde(rename = "dropGoal")]
+    DropGoal,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Team {
+    #[serde(rename = "home")]
+    Home,
+    #[serde(rename = "away")]
+    Away,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchEvent {
+    pub event_type: EventType,
+    pub team: Team,
+    pub timestamp_seconds: u32,
+    #[serde(skip_serializing_if = "is_false", default)]
+    pub converted: bool,
+}
+
+fn is_false(b: &bool) -> bool {
+    !b
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimulatedGame {
+    pub home: TeamStats,
+    pub away: TeamStats,
+    pub events: Vec<MatchEvent>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EventStatistics {
     pub mean: f64,
@@ -183,6 +223,121 @@ impl RugbyPredictionModel {
         let away = self.predict("away")?;
 
         Ok(GameData { home, away })
+    }
+
+    pub fn simulate_game(&self) -> Result<SimulatedGame, String> {
+        let home = self.predict("home")?;
+        let away = self.predict("away")?;
+
+        let events = self.generate_timestamped_events(&home, &away);
+
+        Ok(SimulatedGame { home, away, events })
+    }
+
+    fn biased_game_time(rng: &mut rand::rngs::ThreadRng, first_half_end: u32, game_duration: u32) -> u32 {
+        if rng.gen_bool(0.6) {
+            rng.gen_range(first_half_end..game_duration)
+        } else {
+            rng.gen_range(0..first_half_end)
+        }
+    }
+
+    fn momentum_or_free_time(
+        rng: &mut rand::rngs::ThreadRng,
+        last_event: Option<u32>,
+        first_half_end: u32,
+        game_duration: u32,
+    ) -> u32 {
+        match last_event {
+            Some(last_time) if rng.gen_bool(0.30) => {
+                let offset = rng.gen_range(300..=900);
+                (last_time + offset).min(game_duration - 1)
+            }
+            _ => Self::biased_game_time(rng, first_half_end, game_duration),
+        }
+    }
+
+    fn generate_timestamped_events(&self, home: &TeamStats, away: &TeamStats) -> Vec<MatchEvent> {
+        let mut rng = rand::thread_rng();
+        let mut events = Vec::new();
+
+        let game_duration_seconds = 80 * 60;
+        let first_half_end = 40 * 60;
+
+        // Generate home team events
+        let mut home_try_times: Vec<u32> = (0..home.tries)
+            .map(|_| Self::biased_game_time(&mut rng, first_half_end, game_duration_seconds))
+            .collect();
+        home_try_times.sort_unstable();
+
+        for (i, &try_time) in home_try_times.iter().enumerate() {
+            events.push(MatchEvent {
+                event_type: EventType::Try,
+                team: Team::Home,
+                timestamp_seconds: try_time,
+                converted: i < home.conversions as usize,
+            });
+        }
+
+        let mut home_last_penalty_time: Option<u32> = None;
+        for _ in 0..home.penalties {
+            let time = Self::momentum_or_free_time(&mut rng, home_last_penalty_time, first_half_end, game_duration_seconds);
+            home_last_penalty_time = Some(time);
+            events.push(MatchEvent {
+                event_type: EventType::Penalty,
+                team: Team::Home,
+                timestamp_seconds: time,
+                converted: false,
+            });
+        }
+
+        for _ in 0..home.drop_goals {
+            events.push(MatchEvent {
+                event_type: EventType::DropGoal,
+                team: Team::Home,
+                timestamp_seconds: Self::biased_game_time(&mut rng, first_half_end, game_duration_seconds),
+                converted: false,
+            });
+        }
+
+        // Generate away team events
+        let mut away_try_times: Vec<u32> = (0..away.tries)
+            .map(|_| Self::biased_game_time(&mut rng, first_half_end, game_duration_seconds))
+            .collect();
+        away_try_times.sort_unstable();
+
+        for (i, &try_time) in away_try_times.iter().enumerate() {
+            events.push(MatchEvent {
+                event_type: EventType::Try,
+                team: Team::Away,
+                timestamp_seconds: try_time,
+                converted: i < away.conversions as usize,
+            });
+        }
+
+        let mut away_last_penalty_time: Option<u32> = None;
+        for _ in 0..away.penalties {
+            let time = Self::momentum_or_free_time(&mut rng, away_last_penalty_time, first_half_end, game_duration_seconds);
+            away_last_penalty_time = Some(time);
+            events.push(MatchEvent {
+                event_type: EventType::Penalty,
+                team: Team::Away,
+                timestamp_seconds: time,
+                converted: false,
+            });
+        }
+
+        for _ in 0..away.drop_goals {
+            events.push(MatchEvent {
+                event_type: EventType::DropGoal,
+                team: Team::Away,
+                timestamp_seconds: Self::biased_game_time(&mut rng, first_half_end, game_duration_seconds),
+                converted: false,
+            });
+        }
+
+        events.sort_by_key(|e| e.timestamp_seconds);
+        events
     }
 
     #[cfg(not(target_arch = "wasm32"))]

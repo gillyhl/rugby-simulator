@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { getTeamLogo, getTeamLogoStyle } from '../utils/teamsData';
+import { calcLeaguePoints } from '../utils/seasonUtils';
+import MatchTimeline from './MatchTimeline';
 
 export default function FixtureList({
   fixtures,
   currentRound,
   onSimulateMatch,
   onSimulateRound,
-  simulating
+  simulating,
+  onWatchMatch,
+  onFixtureUpdate
 }) {
   const [expandedFixtures, setExpandedFixtures] = useState(new Set());
+  const [watchingFixture, setWatchingFixture] = useState(null);
+  const [simulatedGame, setSimulatedGame] = useState(null);
 
   const toggleExpanded = (fixtureId) => {
     setExpandedFixtures(prev => {
@@ -20,6 +26,42 @@ export default function FixtureList({
       }
       return next;
     });
+  };
+
+  const handleWatchMatch = async (fixture) => {
+    if (onWatchMatch) {
+      const game = await onWatchMatch(fixture);
+      setWatchingFixture(fixture);
+      setSimulatedGame(game);
+    }
+  };
+
+  const handleTimelineComplete = (simulatedGame, fixture) => {
+    if (simulatedGame && onFixtureUpdate) {
+      const { homePoints, awayPoints } = calcLeaguePoints(
+        simulatedGame.home.score,
+        simulatedGame.away.score,
+        simulatedGame.home.tries,
+        simulatedGame.away.tries
+      );
+
+      const matchResult = {
+        homeScore: simulatedGame.home.score,
+        awayScore: simulatedGame.away.score,
+        homeTries: simulatedGame.home.tries,
+        awayTries: simulatedGame.away.tries,
+        homeConversions: simulatedGame.home.conversions,
+        awayConversions: simulatedGame.away.conversions,
+        homePenalties: simulatedGame.home.penalties,
+        awayPenalties: simulatedGame.away.penalties,
+        homeDropGoals: simulatedGame.home.drop_goals,
+        awayDropGoals: simulatedGame.away.drop_goals,
+        homePoints,
+        awayPoints
+      };
+
+      onFixtureUpdate(fixture.id, matchResult);
+    }
   };
   const roundedFixtures = {};
   for (const fixture of fixtures) {
@@ -115,22 +157,46 @@ export default function FixtureList({
                         </div>
 
                         {fixture.result ? (
-                          <div className="flex items-center gap-2 text-amber-400 font-bold w-20 justify-center shrink-0">
+                          <div className="flex items-center gap-2 text-amber-400 font-bold w-auto justify-center shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleWatchMatch(fixture);
+                              }}
+                              className="py-1 px-2 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 active:scale-95 transition-all"
+                              title="Watch the match timeline"
+                            >
+                              Watch
+                            </button>
                             <span>{fixture.result.homeScore}</span>
                             <span className="text-neutral-400">v</span>
                             <span>{fixture.result.awayScore}</span>
                           </div>
                         ) : isCurrent ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSimulateMatch(fixture);
-                            }}
-                            disabled={simulating}
-                            className="py-1 px-2.5 bg-amber-400 text-neutral-950 font-bold rounded text-xs hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0"
-                          >
-                            {simulating ? 'Sim...' : 'Simulate'}
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSimulateMatch(fixture);
+                              }}
+                              disabled={simulating}
+                              className="py-1 px-2.5 bg-amber-400 text-neutral-950 font-bold rounded text-xs hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              title="Simulate and show result immediately"
+                            >
+                              {simulating ? 'Sim...' : 'Simulate'}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleWatchMatch(fixture);
+                              }}
+                              disabled={simulating}
+                              className="py-1 px-2.5 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              title="Watch the match unfold live"
+                            >
+                              Watch
+                            </button>
+                          </div>
                         ) : (
                           <div className="text-neutral-500 w-20 text-center shrink-0">– v –</div>
                         )}
@@ -209,6 +275,17 @@ export default function FixtureList({
           </div>
         );
       })}
+      {watchingFixture && simulatedGame && (
+        <MatchTimeline
+          fixture={watchingFixture}
+          simulatedGame={simulatedGame}
+          onClose={() => {
+            setWatchingFixture(null);
+            setSimulatedGame(null);
+          }}
+          onComplete={handleTimelineComplete}
+        />
+      )}
     </div>
   );
 }
