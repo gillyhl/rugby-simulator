@@ -26,7 +26,7 @@ export default function MatchTimeline({ fixture, simulatedGame, onClose, onCompl
   useEffect(() => {
     const events = simulatedGame.events.filter(
       e => e.timestamp_seconds <= currentTime
-    );
+    ).sort((a, b) => b.timestamp_seconds - a.timestamp_seconds);
 
     let newHomeScore = 0;
     let newAwayScore = 0;

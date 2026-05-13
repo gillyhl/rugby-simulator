@@ -3,6 +3,7 @@ import { getTeamLogo } from '../utils/teamsData';
 export default function PlayoffBracket({
   playoffFixtures,
   onSimulateMatch,
+  onWatchMatch,
   simulating
 }) {
   if (!playoffFixtures || playoffFixtures.length === 0) {
@@ -52,7 +53,7 @@ export default function PlayoffBracket({
           {sf1.result ? (
             <div className="mt-3 pt-3 border-t border-neutral-700 text-center">
               <div className="text-sm text-neutral-400 mb-1">Result</div>
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-2 mb-3">
                 <div className="text-lg font-bold text-amber-400">
                   {sf1.result.homeScore}
                 </div>
@@ -60,15 +61,33 @@ export default function PlayoffBracket({
                   {sf1.result.awayScore}
                 </div>
               </div>
+              <button
+                onClick={() => onWatchMatch && onWatchMatch(sf1)}
+                disabled={simulating}
+                className="w-full py-1.5 px-2 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                title="Watch the match timeline"
+              >
+                Watch
+              </button>
             </div>
           ) : (
-            <button
-              onClick={() => onSimulateMatch(sf1)}
-              disabled={simulating}
-              className="w-full mt-3 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {simulating ? 'Simulating...' : 'Simulate'}
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => onSimulateMatch(sf1)}
+                disabled={simulating}
+                className="flex-1 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {simulating ? 'Sim...' : 'Simulate'}
+              </button>
+              <button
+                onClick={() => onWatchMatch && onWatchMatch(sf1)}
+                disabled={simulating}
+                className="flex-1 py-2 px-3 bg-blue-600 text-white font-bold rounded text-sm hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                title="Watch the match unfold live"
+              >
+                Watch
+              </button>
+            </div>
           )}
         </div>
 
@@ -101,7 +120,7 @@ export default function PlayoffBracket({
           {sf2.result ? (
             <div className="mt-3 pt-3 border-t border-neutral-700 text-center">
               <div className="text-sm text-neutral-400 mb-1">Result</div>
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-2 mb-3">
                 <div className="text-lg font-bold text-amber-400">
                   {sf2.result.homeScore}
                 </div>
@@ -109,15 +128,33 @@ export default function PlayoffBracket({
                   {sf2.result.awayScore}
                 </div>
               </div>
+              <button
+                onClick={() => onWatchMatch && onWatchMatch(sf2)}
+                disabled={simulating}
+                className="w-full py-1.5 px-2 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                title="Watch the match timeline"
+              >
+                Watch
+              </button>
             </div>
           ) : (
-            <button
-              onClick={() => onSimulateMatch(sf2)}
-              disabled={simulating}
-              className="w-full mt-3 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {simulating ? 'Simulating...' : 'Simulate'}
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => onSimulateMatch(sf2)}
+                disabled={simulating}
+                className="flex-1 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {simulating ? 'Sim...' : 'Simulate'}
+              </button>
+              <button
+                onClick={() => onWatchMatch && onWatchMatch(sf2)}
+                disabled={simulating}
+                className="flex-1 py-2 px-3 bg-blue-600 text-white font-bold rounded text-sm hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                title="Watch the match unfold live"
+              >
+                Watch
+              </button>
+            </div>
           )}
         </div>
 
@@ -156,23 +193,42 @@ export default function PlayoffBracket({
 
               {finalComplete ? (
                 <div className="mt-3 pt-3 border-t border-neutral-700 text-center">
-                  <div className="text-sm text-neutral-400 mb-1">Winner</div>
-                  <div className="text-lg font-bold text-amber-400">
-                    {final.result.homeScore > final.result.awayScore
-                      ? final.home
-                      : final.result.awayScore > final.result.homeScore
-                      ? final.away
-                      : 'Draw'}
+                  <div className="text-sm text-neutral-400 mb-1">Result</div>
+                  <div className="flex justify-center gap-2 mb-3">
+                    <div className="text-lg font-bold text-amber-400">
+                      {final.result.homeScore}
+                    </div>
+                    <div className="text-lg font-bold text-amber-400">
+                      {final.result.awayScore}
+                    </div>
                   </div>
+                  <button
+                    onClick={() => onWatchMatch && onWatchMatch(final)}
+                    disabled={simulating}
+                    className="w-full py-1.5 px-2 bg-blue-600 text-white font-bold rounded text-xs hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    title="Watch the match timeline"
+                  >
+                    Watch
+                  </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => onSimulateMatch(final)}
-                  disabled={simulating}
-                  className="w-full mt-3 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {simulating ? 'Simulating...' : 'Simulate'}
-                </button>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => onSimulateMatch(final)}
+                    disabled={simulating}
+                    className="flex-1 py-2 px-3 bg-amber-400 text-neutral-950 font-bold rounded text-sm hover:bg-amber-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    {simulating ? 'Sim...' : 'Simulate'}
+                  </button>
+                  <button
+                    onClick={() => onWatchMatch && onWatchMatch(final)}
+                    disabled={simulating}
+                    className="flex-1 py-2 px-3 bg-blue-600 text-white font-bold rounded text-sm hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    title="Watch the match unfold live"
+                  >
+                    Watch
+                  </button>
+                </div>
               )}
             </>
           ) : (

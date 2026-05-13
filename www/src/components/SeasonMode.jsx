@@ -7,6 +7,7 @@ import {
 import LeagueTable from './LeagueTable';
 import FixtureList from './FixtureList';
 import PlayoffBracket from './PlayoffBracket';
+import MatchTimeline from './MatchTimeline';
 
 export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
   const [fixtures, setFixtures] = useState(() => generateFixtures());
@@ -14,6 +15,8 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
   const [playoffFixtures, setPlayoffFixtures] = useState([]);
   const [simulating, setSimulating] = useState(false);
   const [error, setError] = useState(null);
+  const [watchingPlayoffFixture, setWatchingPlayoffFixture] = useState(null);
+  const [simulatedPlayoffGame, setSimulatedPlayoffGame] = useState(null);
 
   const currentRound = useMemo(() => {
     const unplayedRounds = fixtures
@@ -277,6 +280,59 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
     }
   };
 
+  const watchPlayoffMatch = async (match) => {
+    if (!predictor || !match.home || !match.away) return null;
+
+    try {
+      console.log(`Watching playoff match: ${match.home} vs ${match.away}`);
+      const freshPredictor = createNewPredictor();
+      const resultJson = freshPredictor.simulate_game(match.home, match.away);
+      console.log('Simulated playoff game from WASM:', resultJson);
+      const result = JSON.parse(resultJson);
+      return result;
+    } catch (err) {
+      console.error('Playoff timeline simulation failed:', err);
+      setError(`Timeline simulation failed: ${err.message}`);
+      return null;
+    }
+  };
+
+  const handleWatchPlayoffMatch = async (match) => {
+    const game = await watchPlayoffMatch(match);
+    setWatchingPlayoffFixture(match);
+    setSimulatedPlayoffGame(game);
+  };
+
+  const handlePlayoffTimelineComplete = (simulatedGame, fixture) => {
+    if (simulatedGame) {
+      const { homePoints, awayPoints } = calcLeaguePoints(
+        simulatedGame.home.score,
+        simulatedGame.away.score,
+        simulatedGame.home.tries,
+        simulatedGame.away.tries
+      );
+
+      const matchResult = {
+        homeScore: simulatedGame.home.score,
+        awayScore: simulatedGame.away.score,
+        homeTries: simulatedGame.home.tries,
+        awayTries: simulatedGame.away.tries,
+        homeConversions: simulatedGame.home.conversions,
+        awayConversions: simulatedGame.away.conversions,
+        homePenalties: simulatedGame.home.penalties,
+        awayPenalties: simulatedGame.away.penalties,
+        homeDropGoals: simulatedGame.home.drop_goals,
+        awayDropGoals: simulatedGame.away.drop_goals,
+        homePoints,
+        awayPoints
+      };
+
+      setPlayoffFixtures(prev =>
+        prev.map(f => (f.id === fixture.id ? { ...f, result: matchResult } : f))
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -340,10 +396,22 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
                 <PlayoffBracket
                   playoffFixtures={playoffFixtures}
                   onSimulateMatch={simulatePlayoffMatch}
+                  onWatchMatch={handleWatchPlayoffMatch}
                   simulating={simulating}
                 />
               </div>
             </div>
+            {watchingPlayoffFixture && simulatedPlayoffGame && (
+              <MatchTimeline
+                fixture={watchingPlayoffFixture}
+                simulatedGame={simulatedPlayoffGame}
+                onClose={() => {
+                  setWatchingPlayoffFixture(null);
+                  setSimulatedPlayoffGame(null);
+                }}
+                onComplete={handlePlayoffTimelineComplete}
+              />
+            )}
           </div>
         )}
 
@@ -356,7 +424,7 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
                 </div>
               </div>
               <div className="lg:col-span-3">
-                <div className="bg-neutral-900 border border-amber-400 rounded-lg p-8 text-center">
+                <div className="bg-neutral-900 border border-amber-400 rounded-lg p-8 text-center mb-8">
                   <h2 className="text-3xl font-bold text-amber-400 mb-4">
                     Season Complete!
                   </h2>
@@ -367,10 +435,25 @@ export default function SeasonMode({ predictor, createNewPredictor, onBack }) {
                       : playoffFixtures[2].away}{' '}
                     are the Gallagher Premiership Champions!
                   </p>
-                  <PlayoffBracket playoffFixtures={playoffFixtures} />
                 </div>
+                <PlayoffBracket
+                  playoffFixtures={playoffFixtures}
+                  onWatchMatch={handleWatchPlayoffMatch}
+                  simulating={simulating}
+                />
               </div>
             </div>
+            {watchingPlayoffFixture && simulatedPlayoffGame && (
+              <MatchTimeline
+                fixture={watchingPlayoffFixture}
+                simulatedGame={simulatedPlayoffGame}
+                onClose={() => {
+                  setWatchingPlayoffFixture(null);
+                  setSimulatedPlayoffGame(null);
+                }}
+                onComplete={handlePlayoffTimelineComplete}
+              />
+            )}
           </div>
         )}
       </div>
